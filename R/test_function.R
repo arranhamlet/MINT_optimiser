@@ -45,7 +45,8 @@ heatmap_intervention <- ggplot(data = intervention_optimised, aes(x = factor(zon
   geom_tile(color = "black") +
   theme_minimal() +
   labs(y = "Proportion of original budget spent", x = "Zone", fill = "Intervention") +
-  theme(legend.position = "bottom") 
+  theme(legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 2))
 
 barplot_averted <- ggplot(data = intervention_optimised_agg) +
   geom_bar(aes(y = factor(budget_variation), x = total_cases_averted, fill = total_costs), stat = "identity") +
@@ -53,12 +54,14 @@ barplot_averted <- ggplot(data = intervention_optimised_agg) +
   labs(x = "Total cases averted", y = "Proportion of original budget spent", fill = "Total costs") +
   scale_x_continuous(labels = scales::comma) +
   geom_vline(xintercept = max(intervention_optimised_agg$total_cases_averted), linetype = "dashed") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.key.width= unit(.95, 'cm')) +
+  scale_fill_continuous(labels = scales::comma)
 
 
-combo_plot <- ggarrange(heatmap_intervention, barplot_averted, widths = c(3, 1))
+combo_plot <- ggarrange(heatmap_intervention, barplot_averted, widths = c(3, 2))
 
-ggsave("figs/intervention_combinations_plot.png", combo_plot, height = 5, width = 8)
+ggsave("figs/intervention_combinations_plot.png", combo_plot, height = 5, width = 12)
 
 
 
