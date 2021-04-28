@@ -15,56 +15,51 @@ library(rmpk)
 invisible(sapply(list.files("R/functions", full.names = T, recursive = T), function(x) source(x)))
 
 data <- read.csv("data/mock_data.csv", stringsAsFactors = FALSE)
-data2 <- data
-data2$zone <- data2$zone + 6
-data <- rbind(data, data2)
+# data2 <- data
+# data2$zone <- data2$zone + 6
+# data <- rbind(data, data2)
 
 # create the input parameters for the model
 # hacked together :)
-n_zones <- n_distinct(data$zone)
-n_interventions <- n_distinct(data$intervention)
-budget <- sum(data$total_costs) / 4 #some random budget
-
-
 time1 <- Sys.time()
 intervention_optimised <- intervention_optimiser(data = data,
-                                                 n_zones = n_zones,
-                                                 n_interventions = n_interventions,
-                                                 budget = 1000000,
+                                                 budget = sum(data$total_costs)/5,
                                                  budget_variation = seq(1, 0.8, by = -0.05))
 time2 <- Sys.time()
 
-time2 - time1
-
 intervention_optimised_agg <- aggregate(x = list(total_costs = intervention_optimised$total_costs,
                                                  total_cases_averted = intervention_optimised$total_cases_averted),
-                                        by = list(budget_variation = intervention_optimised$budget_variation),
+                                        by = list(budget_variation = intervention_optimised$budget_variation,
+                                                  intervention_removed = intervention_optimised$intervention_removed),
                                         FUN = sum)
+time2 - time1
 
-heatmap_intervention <- ggplot(data = intervention_optimised, aes(x = factor(zone), y = factor(budget_variation), fill = intervention)) +
+#Now with all combinations
+heatmap_intervention <- ggplot(data = subset(intervention_optimised, !is.na(total_cases_averted)), 
+                               aes(x = factor(zone), y = factor(budget_variation), fill = intervention)) +
   geom_tile(color = "black") +
   theme_minimal() +
   labs(y = "Proportion of original budget spent", x = "Zone", fill = "Intervention") +
   theme(legend.position = "bottom") +
-  guides(fill = guide_legend(nrow = 2))
+  guides(fill = guide_legend(nrow = 2)) +
+  facet_wrap(~intervention_removed, ncol = 1)
 
-barplot_averted <- ggplot(data = intervention_optimised_agg) +
+barplot_averted <- ggplot(data = subset(intervention_optimised_agg, !is.na(total_cases_averted))) +
   geom_bar(aes(y = factor(budget_variation), x = total_cases_averted, fill = total_costs), stat = "identity") +
   theme_minimal() +
-  labs(x = "Total cases averted", y = "Proportion of original budget spent", fill = "Total costs") +
+  labs(x = "Total cases averted", y = "", fill = "Total costs ($)") +
   scale_x_continuous(labels = scales::comma) +
   geom_vline(xintercept = max(intervention_optimised_agg$total_cases_averted), linetype = "dashed") +
   theme(legend.position = "bottom",
-        legend.key.width= unit(.95, 'cm')) +
-  scale_fill_continuous(labels = scales::comma)
+        legend.key.width = unit(1.45, 'cm')) +
+  scale_fill_continuous(labels = scales::comma) +
+  facet_wrap(~intervention_removed, ncol = 1)
 
+combo_plot <- ggarrange(heatmap_intervention, barplot_averted, widths = c(3, 2.1))
 
-combo_plot <- ggarrange(heatmap_intervention, barplot_averted, widths = c(3, 2))
+combo_plot
 
-ggsave("figs/intervention_combinations_plot.png", combo_plot, height = 5, width = 12)
-
-
-
+ggsave("figs/intervention_combinations_plot_all_considerations.png", combo_plot, height = 10, width = 12)
 
 
 
