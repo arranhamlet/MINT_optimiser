@@ -1,6 +1,6 @@
 intervention_optimiser <- function(data, #This is the dataframe provided into MINT
                                    budget, #The total budget
-                                   budget_variation = 1 #This is a vector of proporional changes to the budget in order to add some variation and see other combinations, i.e. c(1, 0.9, 0.8)
+                                   budget_variation = 1 #This is a vector of proportional changes to the budget in order to add some variation and see other combinations, i.e. c(1, 0.9, 0.8)
 ){
   
   
@@ -12,6 +12,8 @@ intervention_optimiser <- function(data, #This is the dataframe provided into MI
     
     if(b != n_interventions_base + 1){
       data <- subset(data, intervention != unique_interventions_base[b])
+      n_interventions <- n_distinct(data$intervention)
+    } else {
       n_interventions <- n_distinct(data$intervention)
     }
     
